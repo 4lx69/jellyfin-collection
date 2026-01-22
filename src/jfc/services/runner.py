@@ -213,6 +213,9 @@ class Runner:
                 logger.error("Startup failed - aborting run")
                 raise RuntimeError("Startup failed: required services not available")
 
+        # Reset media matcher cache to detect newly added items in Jellyfin
+        self.builder.matcher.reset()
+
         # Initialize run report
         run_report = RunReport(
             run_id=str(uuid.uuid4())[:8],

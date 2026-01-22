@@ -200,3 +200,15 @@ class MediaMatcher:
         """Clear the match cache."""
         self._cache.clear()
         logger.debug("Media matcher cache cleared")
+
+    def reset(self) -> None:
+        """
+        Reset all caches for a fresh run.
+
+        This should be called at the start of each scheduled run to ensure
+        newly added items in Jellyfin are detected.
+        """
+        self._cache.clear()
+        self._library_loaded.clear()
+        self._library_items.clear()
+        logger.info("[MediaMatcher] Cache reset - libraries will be reloaded")
