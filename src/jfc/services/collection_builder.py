@@ -253,6 +253,8 @@ class CollectionBuilder:
 
         to_add: set[str] = set()
         to_remove: set[str] = set()
+        to_add_list: list[str] = []
+        to_remove_list: list[str] = []
 
         # Skip item sync if posters_only mode
         if not posters_only:
@@ -272,11 +274,15 @@ class CollectionBuilder:
             target_ids = set(target_ids_list)
 
             # Calculate changes based on sync mode
-            to_add = target_ids - current_ids
+            # Keep source order for additions (important for IMDb ranking).
+            to_add_list = [item_id for item_id in target_ids_list if item_id not in current_ids]
+            to_add = set(to_add_list)
             if collection.config.sync_mode == SyncMode.SYNC:
                 to_remove = current_ids - target_ids
+                to_remove_list = list(to_remove)
             else:
                 to_remove = set()
+                to_remove_list = []
 
             # Track added/removed titles for report
             added_jellyfin_ids = to_add
@@ -287,7 +293,14 @@ class CollectionBuilder:
             # Determine if we need to reorder (clear and re-add all)
             # Jellyfin displays items in the order they were added
             needs_reorder = (
-                collection.config.collection_order != CollectionOrder.CUSTOM
+                (
+                    collection.config.collection_order != CollectionOrder.CUSTOM
+                    or (
+                        collection.config.collection_order == CollectionOrder.CUSTOM
+                        and collection.config.sync_mode == SyncMode.SYNC
+                        and existing is not None
+                    )
+                )
                 and (to_add or to_remove or not existing)
             )
 
@@ -306,17 +319,17 @@ class CollectionBuilder:
                 )
             else:
                 # Simple add/remove (no reordering needed)
-                if to_add:
-                    await self.jellyfin.add_to_collection(collection.jellyfin_id, list(to_add))
-                    logger.info(f"Added {len(to_add)} items to '{collection.config.name}'")
+                if to_add_list:
+                    await self.jellyfin.add_to_collection(collection.jellyfin_id, to_add_list)
+                    logger.info(f"Added {len(to_add_list)} items to '{collection.config.name}'")
 
-                if to_remove:
-                    await self.jellyfin.remove_from_collection(collection.jellyfin_id, list(to_remove))
-                    logger.info(f"Removed {len(to_remove)} items from '{collection.config.name}'")
+                if to_remove_list:
+                    await self.jellyfin.remove_from_collection(collection.jellyfin_id, to_remove_list)
+                    logger.info(f"Removed {len(to_remove_list)} items from '{collection.config.name}'")
 
             # Update report
-            report.items_added_to_collection = len(to_add)
-            report.items_removed_from_collection = len(to_remove)
+            report.items_added_to_collection = len(to_add_list)
+            report.items_removed_from_collection = len(to_remove_list)
 
             # Update metadata (including DisplayOrder for Jellyfin sorting)
             display_order = self._get_jellyfin_display_order(collection.config.collection_order)
@@ -336,7 +349,7 @@ class CollectionBuilder:
             report.items_sent_to_radarr = radarr_count
             report.items_sent_to_sonarr = sonarr_count
 
-        return (len(to_add), len(to_remove), poster_path)
+        return (len(to_add_list), len(to_remove_list), poster_path)
 
     async def _fetch_items(
         self,
