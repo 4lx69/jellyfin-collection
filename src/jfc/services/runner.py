@@ -13,6 +13,7 @@ from rich.console import Console
 from jfc.clients.discord import DiscordWebhook
 from jfc.clients.imdb import IMDbClient
 from jfc.clients.jellyfin import JellyfinClient
+from jfc.clients.mdblist import MDBListClient
 from jfc.clients.radarr import RadarrClient
 from jfc.clients.sonarr import SonarrClient
 from jfc.clients.signal import SignalClient
@@ -59,6 +60,10 @@ class Runner:
         )
 
         self.imdb = IMDbClient()
+
+        self.mdblist: Optional[MDBListClient] = None
+        if settings.mdblist.api_key:
+            self.mdblist = MDBListClient(api_key=settings.mdblist.api_key)
 
         self.trakt: Optional[TraktClient] = None
         self.trakt_auth: Optional[TraktAuth] = None
@@ -141,6 +146,7 @@ class Runner:
             tmdb=self.tmdb,
             trakt=self.trakt,
             imdb=self.imdb,
+            mdblist=self.mdblist,
             radarr=self.radarr,
             sonarr=self.sonarr,
             poster_generator=self.poster_generator,
@@ -159,6 +165,7 @@ class Runner:
             jellyfin=self.jellyfin,
             tmdb=self.tmdb,
             trakt=self.trakt,
+            mdblist=self.mdblist,
             radarr=self.radarr,
             sonarr=self.sonarr,
         )
@@ -502,6 +509,8 @@ class Runner:
         await self.jellyfin.close()
         await self.tmdb.close()
         await self.imdb.close()
+        if self.mdblist:
+            await self.mdblist.close()
         if self.trakt:
             await self.trakt.close()
         if self.radarr:

@@ -6,6 +6,7 @@ import httpx
 from loguru import logger
 
 from jfc.clients.jellyfin import JellyfinClient
+from jfc.clients.mdblist import MDBListClient
 from jfc.clients.radarr import RadarrClient
 from jfc.clients.sonarr import SonarrClient
 from jfc.clients.tmdb import TMDbClient
@@ -34,6 +35,7 @@ class StartupService:
         jellyfin: JellyfinClient,
         tmdb: TMDbClient,
         trakt: Optional[TraktClient] = None,
+        mdblist: Optional[MDBListClient] = None,
         radarr: Optional[RadarrClient] = None,
         sonarr: Optional[SonarrClient] = None,
     ):
@@ -41,6 +43,7 @@ class StartupService:
         self.jellyfin = jellyfin
         self.tmdb = tmdb
         self.trakt = trakt
+        self.mdblist = mdblist
         self.radarr = radarr
         self.sonarr = sonarr
 
@@ -97,6 +100,18 @@ class StartupService:
                 logger.warning(f"  ✗ Trakt: {e}")
         else:
             logger.info("  ⏭ Trakt: Not configured")
+
+        # MDBList (optional)
+        if self.mdblist and self.settings.mdblist_api_key:
+            try:
+                await self.mdblist.test_connection()
+                results["MDBList"] = True
+                logger.success("  ✓ MDBList: Connected")
+            except Exception as e:
+                results["MDBList"] = False
+                logger.warning(f"  ✗ MDBList: {e}")
+        else:
+            logger.info("  ⏭ MDBList: Not configured")
 
         # Radarr (optional)
         if self.radarr and self.settings.radarr_api_key:

@@ -191,7 +191,7 @@ class KometaParser:
             trakt_popular=config.get("trakt_popular"),
             trakt_chart=trakt_chart,
             trakt_list=config.get("trakt_list"),
-            mdblist_list=config.get("mdblist_list"),
+            mdblist_list=self._normalize_mdblist_list(config.get("mdblist_list")),
             imdb_chart=imdb_chart,
             imdb_list=imdb_list,
             radarr_taglist=radarr_taglist,
@@ -333,6 +333,30 @@ class KometaParser:
             return None
 
         return {"list_ids": list_ids}
+
+    def _normalize_mdblist_list(self, value: Any) -> Optional[dict[str, Any]]:
+        """Normalize mdblist_list into {url, limit?, sort_by?}."""
+        if value is None:
+            return None
+
+        result: dict[str, Any] = {}
+
+        if isinstance(value, dict):
+            url = value.get("url") or value.get("list") or value.get("lists")
+            if isinstance(url, list):
+                url = url[0] if url else None
+            if url:
+                result["url"] = str(url).strip()
+            if value.get("limit") is not None:
+                result["limit"] = value.get("limit")
+            if value.get("sort_by") is not None:
+                result["sort_by"] = value.get("sort_by")
+            return result if result.get("url") else None
+
+        url = str(value).strip()
+        if not url:
+            return None
+        return {"url": url}
 
     def _normalize_string_list(self, value: Any) -> list[str]:
         """Normalize scalar/list values to a clean string list."""

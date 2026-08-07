@@ -124,6 +124,38 @@ collections:
         assert imdb_mix.imdb_chart == {"list_ids": ["tvmeter"]}
         assert imdb_mix.imdb_list == {"list_ids": ["ls055592025"]}
 
+    def test_parse_collection_with_mdblist_list(self, temp_config_dir: Path):
+        """Test parsing mdblist_list string and dict forms."""
+        collection_file = temp_config_dir / "Films.yml"
+        collection_file.write_text(
+            """
+collections:
+  "MDBList String":
+    mdblist_list: https://mdblist.com/lists/linaspurinis/top-watched-movies-of-the-week
+  "MDBList Dict":
+    mdblist_list:
+      url: https://mdblist.com/lists/linaspurinis/top-watched-movies-of-the-week
+      limit: 10
+      sort_by: imdbrating.desc
+""",
+            encoding="utf-8",
+        )
+
+        parser = KometaParser(temp_config_dir)
+        collections = parser.parse_collection_file(collection_file)
+
+        as_string = next(c for c in collections if c.name == "MDBList String")
+        as_dict = next(c for c in collections if c.name == "MDBList Dict")
+
+        assert as_string.mdblist_list == {
+            "url": "https://mdblist.com/lists/linaspurinis/top-watched-movies-of-the-week"
+        }
+        assert as_dict.mdblist_list == {
+            "url": "https://mdblist.com/lists/linaspurinis/top-watched-movies-of-the-week",
+            "limit": 10,
+            "sort_by": "imdbrating.desc",
+        }
+
     def test_parse_collection_with_arr_taglists(self, temp_config_dir: Path):
         """Test parsing radarr_taglist and sonarr_taglist builders."""
         collection_file = temp_config_dir / "Mixed.yml"

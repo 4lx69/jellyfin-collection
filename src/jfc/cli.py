@@ -481,6 +481,18 @@ def test_connections() -> None:
             except Exception as e:
                 results.append(("Trakt", "FAIL", str(e)))
 
+        # Test MDBList (if configured)
+        if settings.mdblist.api_key:
+            from jfc.clients.mdblist import MDBListClient
+
+            try:
+                client = MDBListClient(settings.mdblist.api_key)
+                await client.test_connection()
+                results.append(("MDBList", "OK", "Connected"))
+                await client.close()
+            except Exception as e:
+                results.append(("MDBList", "FAIL", str(e)))
+
         # Test Radarr (if configured)
         if settings.radarr.api_key:
             from jfc.clients.radarr import RadarrClient

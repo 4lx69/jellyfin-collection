@@ -200,7 +200,7 @@ class CollectionConfig(BaseModel):
     trakt_chart: Optional[dict[str, Any]] = None
     trakt_list: Optional[str] = None
 
-    mdblist_list: Optional[str] = None
+    mdblist_list: Optional[dict[str, Any]] = None
 
     imdb_chart: Optional[dict[str, Any]] = None
     imdb_list: Optional[dict[str, Any]] = None

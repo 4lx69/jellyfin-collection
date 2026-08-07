@@ -83,9 +83,9 @@
 
 ## Phase 6: Advanced Features
 
-- [ ] MDBList support
-  - [ ] List parsing
-  - [ ] API client
+- [x] MDBList support
+  - [x] List parsing
+  - [x] API client
 - [ ] IMDb list support
 - [ ] Jellyfin search builder (equivalent to plex_search)
   - [ ] Genre filtering

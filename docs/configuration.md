@@ -308,6 +308,26 @@ collections:
         - ls055592025
 ```
 
+### MDBList Builders
+
+#### `mdblist_list`
+
+```yaml
+collections:
+  "Top Movies of The Week":
+    mdblist_list: https://mdblist.com/lists/linaspurinis/top-watched-movies-of-the-week
+    collection_order: custom
+    sync_mode: sync
+
+  "Top 10 Movies of The Week":
+    mdblist_list:
+      url: https://mdblist.com/lists/linaspurinis/top-watched-movies-of-the-week
+      limit: 10
+      sort_by: imdbrating.desc
+```
+
+Requires `MDBLIST_API_KEY` in `.env`.
+
 ### Arr Taglist Builders
 
 #### `radarr_taglist` (Movies)

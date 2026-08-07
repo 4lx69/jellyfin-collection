@@ -225,6 +225,7 @@ See `docs/configuration.md` for full reference.
 - `tmdb_discover` (full parameter support)
 - `trakt_trending`, `trakt_popular`
 - `trakt_chart` (watched, trending, popular)
+- `mdblist_list` (MDBList lists by URL / user/slug / id)
 - `plex_search` (searches Jellyfin library)
 
 ## Testing
