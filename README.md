@@ -190,7 +190,7 @@ MATCHER_PRELOAD_LIMIT=50000             # Max preloaded items per library
 | `radarr_taglist` | Supported | Build movie collections from Radarr tags |
 | `sonarr_taglist` | Supported | Build series collections from Sonarr tags |
 | `plex_search` | Supported | Jellyfin library search (`Genres`, `year`, `year.gte`, `year.lte`, `limit`) |
-| `mdblist_list` | Planned | MDBList lists (planned) |
+| `mdblist_list` | Supported | MDBList lists (URL, user/slug, or numeric ID) |
 
 ## Project Structure
 

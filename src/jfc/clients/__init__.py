@@ -4,6 +4,7 @@ from jfc.clients.base import BaseClient
 from jfc.clients.discord import DiscordWebhook
 from jfc.clients.imdb import IMDbClient
 from jfc.clients.jellyfin import JellyfinClient
+from jfc.clients.mdblist import MDBListClient
 from jfc.clients.radarr import RadarrClient
 from jfc.clients.sonarr import SonarrClient
 from jfc.clients.tmdb import TMDbClient
@@ -14,6 +15,7 @@ __all__ = [
     "DiscordWebhook",
     "IMDbClient",
     "JellyfinClient",
+    "MDBListClient",
     "RadarrClient",
     "SonarrClient",
     "TMDbClient",

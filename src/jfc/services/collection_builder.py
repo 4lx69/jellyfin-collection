@@ -11,6 +11,7 @@ from loguru import logger
 
 from jfc.clients.imdb import IMDbClient
 from jfc.clients.jellyfin import JellyfinClient
+from jfc.clients.mdblist import MDBListClient
 from jfc.clients.radarr import RadarrClient
 from jfc.clients.sonarr import SonarrClient
 from jfc.clients.tmdb import TMDbClient
@@ -39,6 +40,7 @@ class CollectionBuilder:
         tmdb: TMDbClient,
         trakt: Optional[TraktClient] = None,
         imdb: Optional[IMDbClient] = None,
+        mdblist: Optional[MDBListClient] = None,
         radarr: Optional[RadarrClient] = None,
         sonarr: Optional[SonarrClient] = None,
         poster_generator: Optional[PosterGenerator] = None,
@@ -52,6 +54,7 @@ class CollectionBuilder:
             tmdb: TMDb API client
             trakt: Optional Trakt API client
             imdb: Optional IMDb client
+            mdblist: Optional MDBList API client
             radarr: Optional Radarr client for adding missing movies
             sonarr: Optional Sonarr client for adding missing series
             poster_generator: Optional AI poster generator
@@ -61,6 +64,7 @@ class CollectionBuilder:
         self.tmdb = tmdb
         self.trakt = trakt
         self.imdb = imdb
+        self.mdblist = mdblist
         self.radarr = radarr
         self.sonarr = sonarr
         self.poster_generator = poster_generator
@@ -196,6 +200,8 @@ class CollectionBuilder:
             sources.append("IMDb Chart")
         if config.imdb_list:
             sources.append("IMDb List")
+        if config.mdblist_list:
+            sources.append("MDBList List")
         if config.radarr_taglist:
             sources.append("Radarr Taglist")
         if config.sonarr_taglist:
@@ -439,6 +445,17 @@ class CollectionBuilder:
                 items.extend(await self._fetch_imdb_list(config.imdb_list, media_type))
         elif config.imdb_chart or config.imdb_list:
             logger.warning("IMDb builders configured but IMDb client is not available")
+
+        # MDBList
+        if config.mdblist_list:
+            if self.mdblist:
+                items.extend(
+                    await self._fetch_mdblist_list(config.mdblist_list, media_type)
+                )
+            else:
+                logger.warning(
+                    "mdblist_list configured but MDBList client is not available"
+                )
 
         # Arr tag lists
         if config.radarr_taglist:
@@ -781,6 +798,57 @@ class CollectionBuilder:
             imdb_ids.extend(await self.imdb.get_list(list_id, limit=list_limit))
 
         return await self._resolve_imdb_ids(imdb_ids, media_type, limit=limit)
+
+    async def _fetch_mdblist_list(
+        self,
+        mdblist_list: dict[str, Any],
+        media_type: MediaType,
+    ) -> list[MediaItem]:
+        """Fetch items from an MDBList list."""
+        if not self.mdblist:
+            return []
+
+        url = mdblist_list.get("url")
+        if not url:
+            return []
+
+        ref = self.mdblist.parse_list_ref(str(url))
+        if not ref:
+            return []
+
+        items = await self.mdblist.get_list_items(
+            username=ref.get("username"),
+            listname=ref.get("listname"),
+            list_id=ref.get("list_id"),
+            media_type=media_type,
+            limit=mdblist_list.get("limit"),
+            sort_by=mdblist_list.get("sort_by"),
+        )
+
+        # Resolve items that only have IMDb IDs
+        resolved: list[MediaItem] = []
+        missing_imdb: list[str] = []
+        for item in items:
+            if item.tmdb_id:
+                resolved.append(item)
+            elif item.imdb_id:
+                missing_imdb.append(item.imdb_id)
+            else:
+                logger.debug(f"[MDBList] Skipping item without tmdb/imdb: {item.title}")
+
+        if missing_imdb:
+            remaining = None
+            limit = mdblist_list.get("limit")
+            if limit is not None:
+                remaining = max(int(limit) - len(resolved), 0)
+            if remaining is None or remaining > 0:
+                resolved.extend(
+                    await self._resolve_imdb_ids(
+                        missing_imdb, media_type, limit=remaining
+                    )
+                )
+
+        return resolved
 
     async def _fetch_radarr_taglist(self, config: dict[str, Any]) -> list[MediaItem]:
         """Fetch movies from Radarr filtered by tag names."""
