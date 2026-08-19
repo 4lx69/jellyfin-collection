@@ -209,9 +209,11 @@ class Runner:
                 logger.warning("Trakt not authenticated. Run 'jfc trakt-auth' to authenticate.")
 
         # Run startup sequence (only once)
+        startup_just_ran = False
         if not self._startup_done:
             startup_ok = await self.startup.run_startup(matcher=self.builder.matcher)
             self._startup_done = True
+            startup_just_ran = True
 
             if not startup_ok:
                 logger.error("Startup failed - aborting run")
@@ -219,6 +221,17 @@ class Runner:
 
         # Reset media matcher cache to detect newly added items in Jellyfin
         self.builder.matcher.reset()
+
+        # Opt-in (FORCE_EXCLUSION_LIST_REFRESH): re-fetch Radarr/Sonarr blocklists
+        # and exclusions so items excluded since the previous run are not
+        # requested again. Skipped when startup just loaded fresh lists, and in
+        # posters_only mode which never sends anything to Radarr/Sonarr.
+        if (
+            self.settings.force_exclusion_list_refresh
+            and not startup_just_ran
+            and not posters_only
+        ):
+            await self.startup.refresh_blocklists()
 
         # Initialize run report
         run_report = RunReport(
