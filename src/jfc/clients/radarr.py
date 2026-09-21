@@ -139,14 +139,17 @@ class RadarrClient(BaseClient):
         data = response.json()
         return data.get("records", [])
 
-    async def load_blocklist(self) -> set[int]:
+    async def load_blocklist(self, force_refresh: bool = False) -> set[int]:
         """
         Load blocklist TMDb IDs into cache.
+
+        Args:
+            force_refresh: Re-fetch from Radarr even if already cached
 
         Returns:
             Set of blocked TMDb IDs
         """
-        if self._blocklist_tmdb_ids is not None:
+        if self._blocklist_tmdb_ids is not None and not force_refresh:
             return self._blocklist_tmdb_ids
 
         blocklist = await self.get_blocklist()
@@ -198,14 +201,17 @@ class RadarrClient(BaseClient):
         response.raise_for_status()
         return response.json()
 
-    async def load_exclusions(self) -> set[int]:
+    async def load_exclusions(self, force_refresh: bool = False) -> set[int]:
         """
         Load exclusion list TMDb IDs into cache.
+
+        Args:
+            force_refresh: Re-fetch from Radarr even if already cached
 
         Returns:
             Set of excluded TMDb IDs
         """
-        if self._exclusion_tmdb_ids is not None:
+        if self._exclusion_tmdb_ids is not None and not force_refresh:
             return self._exclusion_tmdb_ids
 
         exclusions = await self.get_exclusions()

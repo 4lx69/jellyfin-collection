@@ -381,6 +381,13 @@ class Settings(BaseSettings):
     data_path: Path = Field(default=Path("/data"))
     log_path: Path = Field(default=Path("/logs"))
     dry_run: bool = Field(default=False)
+    force_exclusion_list_refresh: bool = Field(
+        default=False,
+        description=(
+            "Re-fetch Radarr/Sonarr exclusion lists and blocklists at the start of "
+            "every run instead of only once at startup"
+        ),
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -705,6 +712,7 @@ def log_settings(settings: "Settings") -> None:
     logger.info(f"  Log Level: {settings.log_level}")
     logger.info(f"  Matcher Preload Limit: {settings.matcher_preload_limit}")
     logger.info(f"  Dry Run:   {settings.dry_run}")
+    logger.info(f"  Force Exclusion List Refresh: {settings.force_exclusion_list_refresh}")
 
     logger.info("=" * 60)
 

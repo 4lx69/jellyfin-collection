@@ -260,9 +260,14 @@ class StartupService:
 
         return stats
 
-    async def preload_blocklists(self) -> dict[str, dict[str, int]]:
+    async def preload_blocklists(self, force_refresh: bool = False) -> dict[str, dict[str, int]]:
         """
         Preload Radarr/Sonarr blocklists and exclusion lists into cache.
+
+        Args:
+            force_refresh: Re-fetch the lists even if they are already cached.
+                Used before each run so items excluded/blocked since the last
+                run are taken into account.
 
         Returns:
             Dictionary of service name -> {blocklist: count, exclusions: count}
@@ -273,7 +278,7 @@ class StartupService:
         if self.radarr:
             stats["Radarr"] = {"blocklist": 0, "exclusions": 0}
             try:
-                blocklist = await self.radarr.load_blocklist()
+                blocklist = await self.radarr.load_blocklist(force_refresh=force_refresh)
                 stats["Radarr"]["blocklist"] = len(blocklist)
                 if blocklist:
                     logger.info(f"  ⛔ Radarr: {len(blocklist)} blocked movies")
@@ -281,7 +286,7 @@ class StartupService:
                 logger.warning(f"  ✗ Radarr blocklist: {e}")
 
             try:
-                exclusions = await self.radarr.load_exclusions()
+                exclusions = await self.radarr.load_exclusions(force_refresh=force_refresh)
                 stats["Radarr"]["exclusions"] = len(exclusions)
                 if exclusions:
                     logger.info(f"  🚫 Radarr: {len(exclusions)} excluded movies")
@@ -292,7 +297,7 @@ class StartupService:
         if self.sonarr:
             stats["Sonarr"] = {"blocklist": 0, "exclusions": 0}
             try:
-                blocklist = await self.sonarr.load_blocklist()
+                blocklist = await self.sonarr.load_blocklist(force_refresh=force_refresh)
                 stats["Sonarr"]["blocklist"] = len(blocklist)
                 if blocklist:
                     logger.info(f"  ⛔ Sonarr: {len(blocklist)} blocked series")
@@ -300,7 +305,7 @@ class StartupService:
                 logger.warning(f"  ✗ Sonarr blocklist: {e}")
 
             try:
-                exclusions = await self.sonarr.load_exclusions()
+                exclusions = await self.sonarr.load_exclusions(force_refresh=force_refresh)
                 stats["Sonarr"]["exclusions"] = len(exclusions)
                 if exclusions:
                     logger.info(f"  🚫 Sonarr: {len(exclusions)} excluded series")
@@ -308,6 +313,22 @@ class StartupService:
                 logger.warning(f"  ✗ Sonarr exclusions: {e}")
 
         return stats
+
+    async def refresh_blocklists(self) -> dict[str, dict[str, int]]:
+        """
+        Re-fetch Radarr/Sonarr blocklists and exclusion lists.
+
+        Called at the beginning of every run so items excluded or blocked
+        after the process started are never requested again.
+
+        Returns:
+            Dictionary of service name -> {blocklist: count, exclusions: count}
+        """
+        if not (self.radarr or self.sonarr):
+            return {}
+
+        logger.info("Refreshing Radarr/Sonarr blocklists and exclusions...")
+        return await self.preload_blocklists(force_refresh=True)
 
     async def run_startup(self, matcher: Optional[MediaMatcher] = None) -> bool:
         """

@@ -112,7 +112,20 @@ settings:
   log_level: INFO                    # DEBUG, INFO, WARNING, ERROR
   matcher_preload_limit: 50000       # Max preloaded items per library
   dry_run: false                     # Preview mode (no changes)
+  force_exclusion_list_refresh: false # Re-read Radarr/Sonarr exclusions every run
 ```
+
+### Exclusion list refresh
+
+Radarr/Sonarr exclusion lists and blocklists are read once, when the process
+starts. In the scheduler daemon the process is long-lived, so an item you
+exclude in Radarr/Sonarr afterwards keeps being requested on every run until
+the container is restarted.
+
+Set `force_exclusion_list_refresh: true` (or `FORCE_EXCLUSION_LIST_REFRESH=true`)
+to re-read both lists at the start of every run, so exclusions take effect
+without a restart. It costs two extra API calls per configured service per run.
+Disabled by default, which keeps the original startup-only behaviour.
 
 ## Secrets (.env)
 

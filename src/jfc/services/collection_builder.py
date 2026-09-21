@@ -1317,12 +1317,16 @@ class CollectionBuilder:
                     continue
 
                 try:
-                    await self.sonarr.add_series(
+                    added = await self.sonarr.add_series(
                         tvdb_id=tvdb_id,
                         root_folder=config.sonarr_root_folder,
                         quality_profile=config.sonarr_quality_profile,
                         tags=tags,
                     )
+                    # None means Sonarr skipped it (excluded, blocklisted, ...)
+                    if added is None:
+                        logger.debug(f"'{item.title}' was not added to Sonarr (skipped)")
+                        continue
                     sonarr_count += 1
                     report.sonarr_titles.append(item.title)
                 except Exception as e:
@@ -1334,12 +1338,16 @@ class CollectionBuilder:
                 tags = [tag] if tag else None
 
                 try:
-                    await self.radarr.add_movie(
+                    added = await self.radarr.add_movie(
                         tmdb_id=item.tmdb_id,
                         root_folder=config.radarr_root_folder,
                         quality_profile=config.radarr_quality_profile,
                         tags=tags,
                     )
+                    # None means Radarr skipped it (excluded, blocklisted, ...)
+                    if added is None:
+                        logger.debug(f"'{item.title}' was not added to Radarr (skipped)")
+                        continue
                     radarr_count += 1
                     report.radarr_titles.append(item.title)
                 except Exception as e:

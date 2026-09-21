@@ -165,7 +165,7 @@ class BaseClient:
                 params=params,
                 headers={
                     "Content-Type": content_type,
-                    **self._headers,  # Include auth headers like X-Emby-Token
+                    **self._headers,  # Include auth headers (e.g. Jellyfin Authorization)
                 },
             )
 
