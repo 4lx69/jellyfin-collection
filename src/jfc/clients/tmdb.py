@@ -531,6 +531,29 @@ class TMDbClient(BaseClient):
         response.raise_for_status()
         return self._parse_movie_details(response.json())
 
+    async def is_movie_released(self, tmdb_id: int) -> bool:
+        """
+        Check if a movie is available at home (digital or physical release).
+
+        Uses TMDb release dates (type 4 = digital, 5 = physical) in any country,
+        so theatrical-only movies are reported as not released.
+        """
+        response = await self.get(f"/movie/{tmdb_id}/release_dates", params=self._params())
+
+        if response.status_code == 404:
+            return False
+
+        response.raise_for_status()
+
+        today = date.today().isoformat()
+        for country in response.json().get("results", []):
+            for release in country.get("release_dates", []):
+                release_date = (release.get("release_date") or "")[:10]
+                if release.get("type") in (4, 5) and release_date and release_date <= today:
+                    return True
+
+        return False
+
     async def get_series_details(self, tmdb_id: int) -> Optional[Series]:
         """Get TV series details by TMDb ID."""
         response = await self.get(

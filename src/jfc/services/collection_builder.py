@@ -68,6 +68,7 @@ class CollectionBuilder:
 
         settings = get_settings()
         self.matcher = MediaMatcher(jellyfin, preload_limit=settings.matcher_preload_limit)
+        self.radarr_only_released = settings.radarr_only_released
 
     async def build_collection(
         self,
@@ -281,6 +282,17 @@ class CollectionBuilder:
                 item.jellyfin_id for item in sorted_items if item.jellyfin_id
             ]
             target_ids = set(target_ids_list)
+
+            # Safety: never wipe a populated collection when nothing matched. This happens when
+            # Jellyfin is still indexing (e.g. right after a server upgrade/restart) and the library
+            # looks empty; emptying the collection would lose it until the next run.
+            if not target_ids_list and current_ids and collection.total_items > 0:
+                logger.warning(
+                    f"No items matched for '{collection.config.name}' "
+                    f"({collection.total_items} fetched) but collection has {len(current_ids)} items: "
+                    f"skipping sync to avoid wiping it (library may be incomplete)"
+                )
+                return (0, 0, None)
 
             # Calculate changes based on sync mode
             # Preserve source order for additions (important for ranked lists like IMDb Top 250)
@@ -1346,6 +1358,17 @@ class CollectionBuilder:
                     logger.warning(f"Failed to add '{item.title}' to Sonarr: {e}")
 
             elif not is_series and self.radarr and item.tmdb_id:
+                # Skip movies still in theaters / unreleased (no digital or physical release)
+                if self.radarr_only_released:
+                    try:
+                        released = await self.tmdb.is_movie_released(item.tmdb_id)
+                    except Exception as e:
+                        logger.warning(f"Cannot check release status for '{item.title}': {e}")
+                        released = False
+                    if not released:
+                        logger.debug(f"Skipping '{item.title}' for Radarr: not released at home yet")
+                        continue
+
                 # Radarr settings: item_radarr_tag > radarr_tag > client default
                 tag = config.item_radarr_tag or config.radarr_tag
                 tags = [tag] if tag else None

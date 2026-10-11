@@ -314,6 +314,8 @@ class JellyfinClient(BaseClient):
             "ParentId": collection_id,
             "Fields": "ProviderIds",
             "Recursive": True,
+            # Recursive traversal descends into series (seasons/episodes); keep collection members only
+            "IncludeItemTypes": "Movie,Series",
         }
 
         response = await self.get("/Items", params=params)

@@ -73,6 +73,7 @@ settings:
     root_folder: /movies
     quality_profile: HD-1080p
     default_tag: jfc
+    only_released: false   # true = only request movies with a digital/physical release (skip theatrical-only)
     # api_key: in .env (secret)
 
   # ---------------------------------------------------------------------------

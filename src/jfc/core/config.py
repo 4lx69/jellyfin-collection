@@ -159,6 +159,8 @@ class RadarrSettings(BaseModel):
     quality_profile: str = Field(default="HD-1080p")
     default_tag: str = Field(default="jfc")
     add_missing: bool = Field(default=True)
+    # Only request movies already released digitally/physically (per TMDb release dates)
+    only_released: bool = Field(default=False)
 
 
 class SonarrSettings(BaseModel):
@@ -344,6 +346,7 @@ class Settings(BaseSettings):
     radarr_root_folder: str = Field(default="/movies")
     radarr_quality_profile: str = Field(default="HD-1080p")
     radarr_default_tag: str = Field(default="jfc")
+    radarr_only_released: bool = Field(default=False)
 
     # Sonarr
     sonarr_url: str = Field(default="http://localhost:8989")
@@ -514,6 +517,7 @@ class Settings(BaseSettings):
             root_folder=self.radarr_root_folder,
             quality_profile=self.radarr_quality_profile,
             default_tag=self.radarr_default_tag,
+            only_released=self.radarr_only_released,
         )
 
     @property
@@ -669,6 +673,7 @@ def log_settings(settings: "Settings") -> None:
     logger.info(f"  Root Folder:     {settings.radarr_root_folder}")
     logger.info(f"  Quality Profile: {settings.radarr_quality_profile}")
     logger.info(f"  Default Tag:     {settings.radarr_default_tag}")
+    logger.info(f"  Only Released:   {settings.radarr_only_released}")
 
     # Sonarr
     logger.info("[Sonarr]")

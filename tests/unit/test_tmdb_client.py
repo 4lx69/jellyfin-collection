@@ -151,3 +151,31 @@ async def test_list_endpoints_hit_expected_route(method: str, endpoint: str, med
 
     assert len(items) == 10
     assert client.get.await_args_list[0].args[0] == endpoint
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("release_dates", "expected"),
+    [
+        # Theatrical only (type 3) -> not released at home
+        ([{"iso_3166_1": "FR", "release_dates": [{"type": 3, "release_date": "2026-01-10T00:00:00.000Z"}]}], False),
+        # Digital release in the past in another country -> released
+        (
+            [
+                {"iso_3166_1": "FR", "release_dates": [{"type": 3, "release_date": "2026-01-10T00:00:00.000Z"}]},
+                {"iso_3166_1": "US", "release_dates": [{"type": 4, "release_date": "2026-03-01T00:00:00.000Z"}]},
+            ],
+            True,
+        ),
+        # Physical release in the future -> not released yet
+        ([{"iso_3166_1": "FR", "release_dates": [{"type": 5, "release_date": "2999-01-01T00:00:00.000Z"}]}], False),
+        ([], False),
+    ],
+)
+async def test_is_movie_released(release_dates: list, expected: bool) -> None:
+    """Only past digital (4) or physical (5) releases count as released."""
+    client = TMDbClient(api_key="test-api-key")
+    client.get = AsyncMock(return_value=_JsonResponse({"results": release_dates}))
+
+    assert await client.is_movie_released(123) is expected
+    assert client.get.await_args_list[0].args[0] == "/movie/123/release_dates"
