@@ -129,3 +129,25 @@ async def test_get_trending_series_paginates_past_20() -> None:
     assert client.get.await_count == 2
     assert client.get.await_args_list[0].kwargs["params"]["page"] == 1
     assert client.get.await_args_list[1].kwargs["params"]["page"] == 2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("method", "endpoint", "media"),
+    [
+        ("get_now_playing_movies", "/movie/now_playing", "movie"),
+        ("get_airing_today_series", "/tv/airing_today", "tv"),
+        ("get_on_the_air_series", "/tv/on_the_air", "tv"),
+    ],
+)
+async def test_list_endpoints_hit_expected_route(method: str, endpoint: str, media: str) -> None:
+    """Now playing / airing today / on the air should query their TMDb endpoint."""
+    client = TMDbClient(api_key="test-api-key")
+    client.get = AsyncMock(
+        return_value=_JsonResponse({"results": _results_page(1, 20, media), "total_pages": 1})
+    )
+
+    items = await getattr(client, method)(limit=10)
+
+    assert len(items) == 10
+    assert client.get.await_args_list[0].args[0] == endpoint

@@ -349,6 +349,12 @@ def list_collections(
                 sources.append(f"TMDb Trending ({config.tmdb_trending_weekly})")
             if config.tmdb_popular:
                 sources.append(f"TMDb Popular ({config.tmdb_popular})")
+            if config.tmdb_now_playing:
+                sources.append(f"TMDb Now Playing ({config.tmdb_now_playing})")
+            if config.tmdb_airing_today:
+                sources.append(f"TMDb Airing Today ({config.tmdb_airing_today})")
+            if config.tmdb_on_the_air:
+                sources.append(f"TMDb On The Air ({config.tmdb_on_the_air})")
             if config.tmdb_discover:
                 sources.append("TMDb Discover")
             if config.trakt_trending:

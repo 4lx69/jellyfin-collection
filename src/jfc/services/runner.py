@@ -193,29 +193,38 @@ class Runner:
         if force_posters is None:
             force_posters = self.settings.openai.force_regenerate
 
-        # Initialize Trakt client with valid token (auto-refresh if needed)
-        if self.trakt_auth and not self.trakt:
+        # Initialize Trakt client with valid token (auto-refresh if needed).
+        # Checked on every run: the scheduler daemon is long-lived and Trakt
+        # tokens expire, so the client must be rebuilt when the token changes.
+        if self.trakt_auth:
             access_token = await self.trakt_auth.get_valid_token()
+            if self.trakt and self.trakt.access_token != access_token:
+                await self.trakt.close()
+                self.trakt = None
+                self.builder.trakt = None
             if access_token:
-                self.trakt = TraktClient(
-                    client_id=self.settings.trakt.client_id,
-                    client_secret=self.settings.trakt.client_secret,
-                    access_token=access_token,
-                )
-                # Update builder with Trakt client
-                self.builder.trakt = self.trakt
-                logger.info("Trakt client initialized with valid token")
+                if not self.trakt:
+                    self.trakt = TraktClient(
+                        client_id=self.settings.trakt.client_id,
+                        client_secret=self.settings.trakt.client_secret,
+                        access_token=access_token,
+                    )
+                    # Update builder with Trakt client
+                    self.builder.trakt = self.trakt
+                    logger.info("Trakt client initialized with valid token")
             else:
                 logger.warning("Trakt not authenticated. Run 'jfc trakt-auth' to authenticate.")
 
         # Run startup sequence (only once)
         if not self._startup_done:
             startup_ok = await self.startup.run_startup(matcher=self.builder.matcher)
-            self._startup_done = True
 
             if not startup_ok:
+                # Leave _startup_done unset so the next scheduled run retries startup
                 logger.error("Startup failed - aborting run")
                 raise RuntimeError("Startup failed: required services not available")
+
+            self._startup_done = True
 
         # Reset media matcher cache to detect newly added items in Jellyfin
         self.builder.matcher.reset()

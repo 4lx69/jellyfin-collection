@@ -46,7 +46,8 @@ class JellyfinClient(BaseClient):
         super().__init__(
             base_url=url,
             api_key=api_key,
-            headers={"X-Emby-Token": api_key},
+            # Jellyfin 12+ dropped the legacy X-Emby-Token header
+            headers={"Authorization": f'MediaBrowser Token="{api_key}"'},
         )
 
     # =========================================================================

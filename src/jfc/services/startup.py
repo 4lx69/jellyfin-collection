@@ -1,5 +1,6 @@
 """Startup service for initialization and health checks."""
 
+import asyncio
 from typing import Optional
 
 import httpx
@@ -27,6 +28,9 @@ Jellyfin Collection Manager
 
 class StartupService:
     """Service for application startup and initialization."""
+
+    STARTUP_MAX_ATTEMPTS = 4
+    STARTUP_RETRY_DELAY = 60  # seconds, multiplied by attempt number
 
     def __init__(
         self,
@@ -322,11 +326,21 @@ class StartupService:
         # Print banner
         self.print_banner()
 
-        # Check connections
-        results = await self.check_connections()
+        # Check connections, retrying when required services are temporarily down
+        # (e.g. Jellyfin returning 503 while restarting)
+        for attempt in range(1, self.STARTUP_MAX_ATTEMPTS + 1):
+            results = await self.check_connections()
+            required_ok = results.get("Jellyfin", False) and results.get("TMDb", False)
+            if required_ok:
+                break
+            if attempt < self.STARTUP_MAX_ATTEMPTS:
+                delay = self.STARTUP_RETRY_DELAY * attempt
+                logger.warning(
+                    f"Required services unavailable (attempt {attempt}/"
+                    f"{self.STARTUP_MAX_ATTEMPTS}), retrying in {delay}s..."
+                )
+                await asyncio.sleep(delay)
 
-        # Check required services
-        required_ok = results.get("Jellyfin", False) and results.get("TMDb", False)
         if not required_ok:
             logger.error("✗ Required services (Jellyfin, TMDb) are not available!")
             return False

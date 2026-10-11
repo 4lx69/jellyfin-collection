@@ -185,6 +185,9 @@ class KometaParser:
             tmdb_trending_weekly=config.get("tmdb_trending_weekly"),
             tmdb_trending_daily=config.get("tmdb_trending_daily"),
             tmdb_popular=config.get("tmdb_popular"),
+            tmdb_now_playing=config.get("tmdb_now_playing"),
+            tmdb_airing_today=config.get("tmdb_airing_today"),
+            tmdb_on_the_air=config.get("tmdb_on_the_air"),
             tmdb_discover=tmdb_discover,
             tmdb_list=config.get("tmdb_list"),
             trakt_trending=config.get("trakt_trending"),
@@ -406,7 +409,9 @@ class KometaParser:
 
         if "without_genres" in discover:
             genres = discover["without_genres"]
-            if isinstance(genres, int):
+            if isinstance(genres, str):
+                result["without_genres"] = [int(g) for g in genres.split(",")]
+            elif isinstance(genres, int):
                 result["without_genres"] = [genres]
             else:
                 result["without_genres"] = genres

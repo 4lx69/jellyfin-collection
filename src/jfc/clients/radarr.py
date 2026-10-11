@@ -291,7 +291,8 @@ class RadarrClient(BaseClient):
             minimum_availability: When to consider available
 
         Returns:
-            Added movie data or None if failed
+            Added movie data, or None if skipped (excluded, blocklisted,
+            already in Radarr) or failed
         """
         # Check if excluded (user explicitly doesn't want this movie)
         if await self.is_excluded(tmdb_id):
@@ -306,7 +307,7 @@ class RadarrClient(BaseClient):
         # Check if already exists
         if await self.movie_exists(tmdb_id):
             logger.debug(f"Movie {tmdb_id} already exists in Radarr")
-            return await self.get_movie_by_tmdb_id(tmdb_id)
+            return None
 
         # Lookup movie
         movie_data = await self.lookup_movie(tmdb_id)

@@ -401,6 +401,22 @@ class TestNormalizeTmdbDiscover:
         })
         assert result["with_genres"] == [28]
 
+    def test_without_genres_string(self, temp_config_dir: Path):
+        """Test excluded genres as comma-separated string."""
+        parser = KometaParser(temp_config_dir)
+        result = parser._normalize_tmdb_discover({
+            "without_genres": "16,10402,99",
+        })
+        assert result["without_genres"] == [16, 10402, 99]
+
+    def test_without_genres_single_int(self, temp_config_dir: Path):
+        """Test single excluded genre as int."""
+        parser = KometaParser(temp_config_dir)
+        result = parser._normalize_tmdb_discover({
+            "without_genres": 16,
+        })
+        assert result["without_genres"] == [16]
+
     def test_watch_providers_pipe_separated(self, temp_config_dir: Path):
         """Test watch providers as pipe-separated string."""
         parser = KometaParser(temp_config_dir)

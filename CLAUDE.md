@@ -218,10 +218,17 @@ See `docs/configuration.md` for full reference.
 └── error.log
 ```
 
+## Production (TrueNAS)
+
+Accessible via SMB depuis le poste de dev :
+- **Config** : `\\truenas\app-configs\jellyfin-collection\config` (config.yml, Films.yml, Series.yml, Cartoons.yml, templates/)
+- **Data + logs** : `\\truenas\app-data\jellyfin-collection` (`data/`, `logs/`)
+
 ## Supported Builders
 
 - `tmdb_trending_weekly`, `tmdb_trending_daily`
-- `tmdb_popular`, `tmdb_now_playing`
+- `tmdb_popular`, `tmdb_now_playing` (movies)
+- `tmdb_airing_today`, `tmdb_on_the_air` (series)
 - `tmdb_discover` (full parameter support)
 - `trakt_trending`, `trakt_popular`
 - `trakt_chart` (watched, trending, popular)

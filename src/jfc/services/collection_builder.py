@@ -181,6 +181,10 @@ class CollectionBuilder:
             sources.append("TMDb Trending")
         if config.tmdb_popular:
             sources.append("TMDb Popular")
+        if config.tmdb_now_playing:
+            sources.append("TMDb Now Playing")
+        if config.tmdb_airing_today or config.tmdb_on_the_air:
+            sources.append("TMDb Airing")
         if config.tmdb_discover:
             sources.append("TMDb Discover")
         if config.tmdb_list:
@@ -412,6 +416,17 @@ class CollectionBuilder:
                 items.extend(await self.tmdb.get_popular_movies(config.tmdb_popular))
             else:
                 items.extend(await self.tmdb.get_popular_series(config.tmdb_popular))
+
+        # TMDb Now Playing (movies only)
+        if config.tmdb_now_playing and media_type == MediaType.MOVIE:
+            items.extend(await self.tmdb.get_now_playing_movies(config.tmdb_now_playing))
+
+        # TMDb Airing Today / On The Air (series only)
+        if config.tmdb_airing_today and media_type != MediaType.MOVIE:
+            items.extend(await self.tmdb.get_airing_today_series(config.tmdb_airing_today))
+
+        if config.tmdb_on_the_air and media_type != MediaType.MOVIE:
+            items.extend(await self.tmdb.get_on_the_air_series(config.tmdb_on_the_air))
 
         # TMDb Discover
         if config.tmdb_discover:
@@ -1317,14 +1332,16 @@ class CollectionBuilder:
                     continue
 
                 try:
-                    await self.sonarr.add_series(
+                    added = await self.sonarr.add_series(
                         tvdb_id=tvdb_id,
                         root_folder=config.sonarr_root_folder,
                         quality_profile=config.sonarr_quality_profile,
                         tags=tags,
                     )
-                    sonarr_count += 1
-                    report.sonarr_titles.append(item.title)
+                    # Only count real additions (skips existing/excluded/blocklisted)
+                    if added:
+                        sonarr_count += 1
+                        report.sonarr_titles.append(item.title)
                 except Exception as e:
                     logger.warning(f"Failed to add '{item.title}' to Sonarr: {e}")
 
@@ -1334,14 +1351,16 @@ class CollectionBuilder:
                 tags = [tag] if tag else None
 
                 try:
-                    await self.radarr.add_movie(
+                    added = await self.radarr.add_movie(
                         tmdb_id=item.tmdb_id,
                         root_folder=config.radarr_root_folder,
                         quality_profile=config.radarr_quality_profile,
                         tags=tags,
                     )
-                    radarr_count += 1
-                    report.radarr_titles.append(item.title)
+                    # Only count real additions (skips existing/excluded/blocklisted)
+                    if added:
+                        radarr_count += 1
+                        report.radarr_titles.append(item.title)
                 except Exception as e:
                     logger.warning(f"Failed to add '{item.title}' to Radarr: {e}")
 

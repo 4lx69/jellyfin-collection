@@ -172,6 +172,45 @@ class TMDbClient(BaseClient):
         self._log_items("Popular Series", series, self._params(**params))
         return series
 
+    async def get_now_playing_movies(self, limit: int = 20) -> list[Movie]:
+        """Get movies currently in theaters (uses configured region)."""
+        params: dict[str, Any] = {}
+        movies = await self._fetch_paginated_results(
+            endpoint="/movie/now_playing",
+            limit=limit,
+            parser=self._parse_movie,
+            params=params,
+        )
+
+        self._log_items("Now Playing Movies", movies, self._params(**params))
+        return movies
+
+    async def get_airing_today_series(self, limit: int = 20) -> list[Series]:
+        """Get TV series with an episode airing today."""
+        params: dict[str, Any] = {}
+        series = await self._fetch_paginated_results(
+            endpoint="/tv/airing_today",
+            limit=limit,
+            parser=self._parse_series,
+            params=params,
+        )
+
+        self._log_items("Airing Today Series", series, self._params(**params))
+        return series
+
+    async def get_on_the_air_series(self, limit: int = 20) -> list[Series]:
+        """Get TV series with an episode airing in the next 7 days."""
+        params: dict[str, Any] = {}
+        series = await self._fetch_paginated_results(
+            endpoint="/tv/on_the_air",
+            limit=limit,
+            parser=self._parse_series,
+            params=params,
+        )
+
+        self._log_items("On The Air Series", series, self._params(**params))
+        return series
+
     # =========================================================================
     # Discover
     # =========================================================================

@@ -192,6 +192,9 @@ class CollectionConfig(BaseModel):
     tmdb_trending_weekly: Optional[int] = None
     tmdb_trending_daily: Optional[int] = None
     tmdb_popular: Optional[int] = None
+    tmdb_now_playing: Optional[int] = None
+    tmdb_airing_today: Optional[int] = None
+    tmdb_on_the_air: Optional[int] = None
     tmdb_discover: Optional[dict[str, Any]] = None
     tmdb_list: Optional[str | int | list[str | int]] = None
 

@@ -300,7 +300,8 @@ class SonarrClient(BaseClient):
             monitor: What to monitor (all, future, missing, existing, firstSeason, latestSeason, none)
 
         Returns:
-            Added series data or None if failed
+            Added series data, or None if skipped (excluded, blocklisted,
+            already in Sonarr) or failed
         """
         # Check if excluded (user explicitly doesn't want this series)
         if await self.is_excluded(tvdb_id):
@@ -315,7 +316,7 @@ class SonarrClient(BaseClient):
         # Check if already exists
         if await self.series_exists(tvdb_id):
             logger.debug(f"Series {tvdb_id} already exists in Sonarr")
-            return await self.get_series_by_tvdb_id(tvdb_id)
+            return None
 
         # Lookup series
         series_data = await self.lookup_series(tvdb_id)
